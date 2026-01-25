@@ -1,3 +1,31 @@
 env
+test.py
+
+
+
+# Python cache & virtualenv
+__pycache__/
+*.py[cod]
+venv/
+
+
+# OS & editor files
+
+
+
+# LangChain-related
+
+
+# Data & archive
+
+
+# Secrets & configs
 .env
+
+
+# Logs
+logs/
+
+
+# Build/Dist
 document_portal.egg-info
