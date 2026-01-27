@@ -1,6 +1,7 @@
 import logging
 import os
 from datetime import datetime
+import structlog
 
 class CustomLogger:
 
@@ -11,23 +12,46 @@ class CustomLogger:
 
         # Timestamped log file (for persistence)
         log_file = f"{datetime.now().strftime('%m_%d_%Y_%H_%M_%S')}.log"
-        log_file_path = os.path.join(self.logs_dir, log_file)
+        self.log_file_path = os.path.join(self.logs_dir, log_file)
         
-        #configure logging
-        logging.basicConfig(
-            filename=log_file_path,
-            format="[%(asctime)s: %(levelname)s: %(module)s]: %(message)s", 
-            level=logging.INFO,
-        )
         
     def get_logger(self, name=__file__):
-        return logging.getLogger(os.path.basename(name))
+        logger_name = os.path.basename(name)
     
+        # Configure logging for console + file (both JSON)
+        file_handler = logging.FileHandler(self.log_file_path)
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(logging.Formatter("%(message)s"))  # Raw JSON lines
+
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        console_handler.setFormatter(logging.Formatter("%(message)s"))
+    
+        #configure logging
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(message)s",  # Structlog will handle JSON rendering
+            handlers=[console_handler, file_handler]
+        )
+        
+        # Configure structlog for JSON structured logging
+        structlog.configure(
+            processors=[
+                structlog.processors.TimeStamper(fmt="iso", utc=True, key="timestamp"),
+                structlog.processors.add_log_level,
+                structlog.processors.EventRenamer(to="event"),
+                structlog.processors.JSONRenderer()
+            ],
+            logger_factory=structlog.stdlib.LoggerFactory(),
+            cache_logger_on_first_use=True,
+        )
+
+        return structlog.get_logger(logger_name)
     
     # # --- Usage Example ---
 if __name__ == "__main__":
     logger = CustomLogger()
     logger=logger.get_logger(__file__)
     logger.info("Logger initialized successfully")
-    #logger.info("User uploaded a file", user_id=123, filename="report.pdf")
-    #logger.error("Failed to process PDF", error="File not found", user_id=123)
+    logger.info("User uploaded a file", user_id=123, filename="report.pdf")
+    logger.error("Failed to process PDF", error="File not found", user_id=123)
