@@ -17,6 +17,10 @@ venv/
 
 
 # Data & archive
+data/
+archive/
+main_archive/
+*.pdf
 
 
 # Secrets & configs
