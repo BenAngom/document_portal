@@ -14,6 +14,7 @@ class DocumentHandler:
     def __init__(self,data_dir=None,session_id=None):
         try:
             self.log=CustomLogger().get_logger(__name__) # name of the current module
+            
             self.data_dir=data_dir or os.getenv(
             "DATA_STORAGE_PATH",
             os.path.join(os.getcwd(),"data","document_analysis")
