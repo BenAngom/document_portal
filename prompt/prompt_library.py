@@ -10,3 +10,11 @@ Return ONLY valid JSON matching the exact schema below.
 Analyze this document:
 {document_text}
 """)
+
+# Central dictionary to register prompts
+PROMPT_REGISTRY = {
+    "document_analysis": document_analysis_prompt,
+    "document_comparison": document_comparison_prompt,
+    "contextualize_question": contextualize_question_prompt,
+    "context_qa": context_qa_prompt,
+}

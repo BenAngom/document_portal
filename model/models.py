@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Union, Dict, Any
+from enum import Enum
 
 
 class Metadata(BaseModel):
@@ -12,4 +13,11 @@ class Metadata(BaseModel):
     Language: str
     PageCount: Union[int, str]  # Can be "Not Available"
     SentimentTone: str
+    
+class ChangeFormat(BaseModel):
+    Page: str
+    Changes: str
+    
+class SummaryResponse(RootModel[list[ChangeFormat]]):
+    pass
     

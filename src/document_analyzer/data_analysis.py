@@ -3,8 +3,8 @@ import sys
 from utils.model_loader import ModelLoader
 from logger.custom_logger import CustomLogger
 from exception.custom_exception import DocumentPortalException
-from model.models import Metadata
-from prompt.prompt_library import prompt
+from model.models import *
+from prompt.prompt_library import PROMPT_REGISTRY
 
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -27,7 +27,7 @@ class DocumentAnalyzer:
                 pydantic_object=Metadata
             )
 
-            self.prompt = prompt
+            self.prompt = PROMPT_REGISTRY["document_analysis"]
 
             self.log.info("DocumentAnalyzer initialized successfully")
 
