@@ -30,19 +30,20 @@ class DocumentComparatorLLM:
                 "format_instruction": self.parser.get_format_instructions()
             }
 
-            log.info("Invoking document comparison LLM chain")
+            self.log.info("Invoking document comparison LLM chain")
             response = self.chain.invoke(inputs)
-            log.info("Chain invoked successfully", response_preview=str(response)[:200])
+            self.log.info("Chain invoked successfully", response_preview=str(response)[:200])
             return self._format_response(response)
         except Exception as e:
-            log.error("Error in compare_documents", error=str(e))
+            self.log.error("Error in compare_documents", error=str(e))
             raise DocumentPortalException("Error comparing documents", sys)
 
     def _format_response(self, response_parsed: list[dict]) -> pd.DataFrame: #type: ignore
         """Format the LLM response into a pandas DataFrame structured format."""
         try:
             df = pd.DataFrame(response_parsed)
+            self.log.info("Response formatted into Dataframe ", dataframe=df)
             return df
         except Exception as e:
-            log.error("Error formatting response into DataFrame", error=str(e))
+            self.log.error("Error formatting response into DataFrame", error=str(e))
             DocumentPortalException("Error formatting response", sys)

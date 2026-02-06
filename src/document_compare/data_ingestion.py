@@ -16,16 +16,37 @@ class DocumentIngestion:
         delete all existing files in the specific paths
         """
         try:
-            pass
+            if self.base_dir.exists() and self.base_dir.is_dir():
+                for file in self.base_dir.iterdir():
+                    if file.is_file():
+                        file.unlink()
+                        self.log.info("File deleted ",path=str(file))
+                self.log.info("Directory cleaned ", directory=str(self.base_dir))
         except Exception as e:
             self.log.error("Error deleting existing files", error=str(e))
             raise DocumentPortalException("An Error occurred while deleting existing files", sys)
     
-    def save_uploaded_file(self):
+    def save_uploaded_file(self, reference_file, actual_file):
         """save the uploaded file to a specific directory
         """
         try:
-            pass
+            self.delete_existing_files()
+            self.log.info("Deleted existing files in the upload directory")
+            
+            ref_path=self.base_dir / reference_file.name
+            act_path=self.base_dir / actual_file.name
+            
+            if not reference_file.name.endswith(".pdf") or not actual_file.name.endswith(".pdf"):
+                raise ValueError("Only PDF files are allowed.")
+            
+            with open(ref_path, "wb") as f:
+                f.write(reference_file.getbuffer())
+                
+            with open(act_path, "wb") as f:
+                f.write(actual_file.getbuffer())
+                
+            self.log.info("Successfully saved uploaded files", reference_file=str(ref_path), actual_file=str(act_path))
+            return ref_path, act_path
         except Exception as e:
             self.log.error("Error saving uploaded file", error=str(e))
             raise DocumentPortalException("An Error occurred while saving the uploaded file", sys)
