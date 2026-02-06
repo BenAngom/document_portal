@@ -13,15 +13,17 @@ from model.models import *
 class DocumentComparatorLLM:
     def __init__(self):
         load_dotenv()
+        self.log= CustomLogger().get_logger(__name__)
         self.loader = ModelLoader()
         self.llm = self.loader.load_llm()
         self.parser = JsonOutputParser(pydantic_object=SummaryResponse)
         self.fixing_parser = OutputFixingParser.from_llm(parser=self.parser, llm=self.llm)
         self.prompt = PROMPT_REGISTRY[PromptType.DOCUMENT_COMPARISON.value]
-        self.chain = self.prompt | self.llm | self.parser
-        log.info("DocumentComparatorLLM initialized", model=self.llm)
+        self.chain = self.prompt | self.llm | self.parser | self.fixing_parser
+        self.log.info("DocumentComparatorLLM initialized", model=self.llm)
 
     def compare_documents(self, combined_docs: str) -> pd.DataFrame:
+        """Compare two documents using LLM and return structured DataFrame/comparison."""
         try:
             inputs = {
                 "combined_docs": combined_docs,
@@ -37,6 +39,7 @@ class DocumentComparatorLLM:
             raise DocumentPortalException("Error comparing documents", sys)
 
     def _format_response(self, response_parsed: list[dict]) -> pd.DataFrame: #type: ignore
+        """Format the LLM response into a pandas DataFrame structured format."""
         try:
             df = pd.DataFrame(response_parsed)
             return df
