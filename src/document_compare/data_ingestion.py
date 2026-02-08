@@ -26,7 +26,7 @@ class DocumentIngestion:
             self.log.error("Error deleting existing files", error=str(e))
             raise DocumentPortalException("An Error occurred while deleting existing files", sys)
     
-    def save_uploaded_file(self, reference_file, actual_file):
+    def save_uploaded_files(self, reference_file, actual_file):
         """save the uploaded file to a specific directory
         """
         try:
@@ -52,13 +52,12 @@ class DocumentIngestion:
             raise DocumentPortalException("An Error occurred while saving the uploaded file", sys)
         
     
-    def read_pdf(self,pdf_path: Path) -> str:
+    def read_pdf(self,pdf_path: Path)->str:
         """
-        read the file from a specific location
-
+        reads a pdf file and extracts text from each page
         """
         try:
-            with fitz.open(self, pdf_path:str) as doc:
+            with fitz.open(pdf_path) as doc:
                 if doc.is_encrypted:
                     raise ValueError(f"The PDF document is encrypted and cannot be processed.{pdf_path.name}")
                 all_text = []
@@ -68,14 +67,14 @@ class DocumentIngestion:
                     
                     if(text.strip()):
                         all_text.append(f"\n Page {page_num + 1} --- \n{text}")
-                self.log.info(f"Successfully read PDF: ", file=str(pdf_path), pages=len(all_text)
+                self.log.info(f"Successfully read PDF: ", file=str(pdf_path), pages=len(all_text))
                 return "\n".join(all_text)
         except Exception as e:
             self.log.error("Error reading PDF", error=str(e))
             raise DocumentPortalException("An Error occurred while reading the PDF", sys)
             
 
-    def combine_documents(self)-->str:
+    def combine_documents(self)->str:
         try:
             content_dict = {}
             doc_parts = []
@@ -84,7 +83,7 @@ class DocumentIngestion:
                     content_dict[filename.name] = self.read_pdf(filename)
                     
             for filename, content in content_dict.items():
-                doc_parts.append(f"Document Name: {filename}\n{Content}")
+                doc_parts.append(f"Document Name: {filename}\n{content}")
                 
             combined_text = "\n\n".join(doc_parts)
             self.log.info("Successfully combined documents", document_count=len(doc_parts))
