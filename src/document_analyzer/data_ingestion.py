@@ -15,8 +15,7 @@ class DocumentHandler:
         try:
             self.log=CustomLogger().get_logger(__name__) # name of the current module
             
-            self.data_dir=data_dir or os.getenv(
-            "DATA_STORAGE_PATH",
+            self.data_dir=data_dir or os.getenv("DATA_STORAGE_PATH",
             os.path.join(os.getcwd(),"data","document_analysis")
             )
             self.session_id=session_id or f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
