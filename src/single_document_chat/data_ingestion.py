@@ -1,5 +1,6 @@
 import uuid
 from pathlib import Path
+from datetime import datetime, timezone
 import sys
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitter import RecursiveCharacterTextSplitter
@@ -9,29 +10,65 @@ from exception.custom_exception import DocumentPortalException
 
 class SingleDocIngestion:
     
-    def __init__(self):
+    def __init__(self, data_dir: str="/Users/benudhorangom/Documents/document_portal/data/single_document_chat", faiss_dir :str = "faiss_index",session_id=None):
         try:
             self.log = CustomLogger().get_logger(__name__)
-            self.loader = Modelloader()
-            self.pdf_loader = PyPDFLoader()
-            self.text_splitter = RecursiveCharacterTextSplitter()
-            self.vector_store = FAISS()
+            
+            self.data_dir = Path(data_dir)
+            self.data_dir.mkdir(parents=True, exist_ok=True)
+            
+            self.faiss_dir = Path(faiss_dir)
+            self.faiss_dir.mkdir(parents=True, exist_ok=True)
+            
+            self.model_loader = Modelloader()
+            self.log.info("SingleDocIngestion initialized", data_dir=str(self.data_dir), faiss_dir=str(self.faiss_dir))
             
         except Exception as e:
             self.log.error("Error initializing SingleDocIngestion", error=str(e))
             raise DocumentPortalException("An Error occurred while initializing SingleDocIngestion", sys)
         
         
-    def ingest_files(self):
+    def ingest_files(self, uploaded_files):
         try:
-            pass
+            documents = []
+            
+            for uploaded_file in uploaded_files:
+                unique_filename = f"session_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.pdf"
+                temp_path = self.data_dir / unique_filename
+                
+                with open(temp_path, "wb") as f_out:
+                    f_out.write(uploaded_file.read())
+                self.log.info("Saved uploaded file", original_name=uploaded_file.name, temp_path=str(temp_path))
+                
+                loader = PyPDFLoader(str(temp_path))
+                docs=loader.load()
+                documents.extend(docs)
+            
+            self.log.info("PDF files loaded", count=len(documents), session_id=str(self.session_id))
+            return self._create_retriever(documents)
         except Exception as e:
             self.log.error("Error ingesting files", error=str(e))
             raise DocumentPortalException("An Error occurred while ingesting files", sys)
         
-    def _create_retriever(self):
+    def _create_retriever(self, documents):
         try:
-            pass
+            ##Chunking logic
+            splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=300)
+            doc_chunks = splitter.split_documents(documents)
+            self.log.info("Documents split into chunks", original_count=len(documents), chunk_count=len(doc_chunks), session_id=str(self.session_id))
+            
+            ##Load embedding model
+            embedding_model = self.model_loader.get_embedding_model()
+            vectorstore = FAISS.from_documents(doc_chunks, embedding_model)
+            
+            ##save FAISS index to disk
+            vectorstore.save_local(str(self.faiss_dir))
+            self.log.info("FAISS index created and saved", faiss_path=str(self.faiss_dir))
+            
+            ##Retriever creation
+            retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
+            self.log.info("Retriever created from FAISS index", session_id=str(self.session_id))
+            return retriever
         except Exception as e:
             self.log.error("Error creating retriever", error=str(e))
             raise DocumentPortalException("An Error occurred while creating the retriever", sys)
