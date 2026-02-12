@@ -12,5 +12,6 @@ pandas
 streamlit
 langchain-core[tracing]
 pytest
+langchain-text-splitters
 
 -e .

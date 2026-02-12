@@ -3,14 +3,16 @@ from pathlib import Path
 from datetime import datetime, timezone
 import sys
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitter import RecursiveCharacterTextSplitter
+from utils.model_loader import ModelLoader
+#from langchain_text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from logger.custom_logger import CustomLogger
 from exception.custom_exception import DocumentPortalException
 
-class SingleDocIngestion:
+class SingleDocIngestor:
     
-    def __init__(self, data_dir: str="/Users/benudhorangom/Documents/document_portal/data/single_document_chat", faiss_dir :str = "faiss_index",session_id=None):
+    def __init__(self, data_dir: str="/Users/benudhorangom/Documents/document_portal/data/single_document_chat", faiss_dir :str = "faiss_index"): 
         try:
             self.log = CustomLogger().get_logger(__name__)
             
@@ -20,7 +22,7 @@ class SingleDocIngestion:
             self.faiss_dir = Path(faiss_dir)
             self.faiss_dir.mkdir(parents=True, exist_ok=True)
             
-            self.model_loader = Modelloader()
+            self.model_loader = ModelLoader()
             self.log.info("SingleDocIngestion initialized", data_dir=str(self.data_dir), faiss_dir=str(self.faiss_dir))
             
         except Exception as e:
@@ -44,7 +46,7 @@ class SingleDocIngestion:
                 docs=loader.load()
                 documents.extend(docs)
             
-            self.log.info("PDF files loaded", count=len(documents), session_id=str(self.session_id))
+            self.log.info("PDF files loaded", count=len(documents))
             return self._create_retriever(documents)
         except Exception as e:
             self.log.error("Error ingesting files", error=str(e))
@@ -55,10 +57,10 @@ class SingleDocIngestion:
             ##Chunking logic
             splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=300)
             doc_chunks = splitter.split_documents(documents)
-            self.log.info("Documents split into chunks", original_count=len(documents), chunk_count=len(doc_chunks), session_id=str(self.session_id))
+            self.log.info("Documents split into chunks", original_count=len(documents), chunk_count=len(doc_chunks))
             
             ##Load embedding model
-            embedding_model = self.model_loader.get_embedding_model()
+            embedding_model = self.model_loader.load_embeddings()
             vectorstore = FAISS.from_documents(doc_chunks, embedding_model)
             
             ##save FAISS index to disk
@@ -67,7 +69,7 @@ class SingleDocIngestion:
             
             ##Retriever creation
             retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
-            self.log.info("Retriever created from FAISS index", session_id=str(self.session_id))
+            self.log.info("Retriever created from FAISS index")
             return retriever
         except Exception as e:
             self.log.error("Error creating retriever", error=str(e))
