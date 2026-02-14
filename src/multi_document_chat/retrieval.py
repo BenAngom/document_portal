@@ -15,7 +15,7 @@ class ConversationalRAG:
         pass
     
     @staticmethod
-    def _format_docs(self):
+    def _format_docs(docs):
         # Logic to format retrieved documents for the language model
         pass
     
