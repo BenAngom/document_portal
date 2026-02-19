@@ -12,7 +12,7 @@ from langchain_community.vectorstores import FAISS
 from utils.model_loader import ModelLoader
 from exception.custom_exception import DocumentPortalException
 from logger.custom_logger import CustomLogger
-from prompt.prompt_library import prompt_library
+from prompt.prompt_library import PROMPT_REGISTRY
 from model.models import PromptType
 
 class ConversationalRAG:
@@ -59,7 +59,7 @@ class ConversationalRAG:
             self.log.error("Failed to load retriver from FAISS", error=str(e))
             raise DocumentPortalException("Loading error in ConversationRAG", sys)
     
-    def invoke(self, user_input:str, chat_history: Optional[List[BaseMessage]] = None) -->str:
+    def invoke(self, user_input:str, chat_history: Optional[List[BaseMessage]] = None) ->str:
         # Logic to handle the conversational retrieval process
         try:
             chat_history = chat_history or []
@@ -75,7 +75,7 @@ class ConversationalRAG:
                 answer_preview=answer[:150])
         except Exception as e :
             self.log.error("Failed to invoke ConversationalRAG",error=str(e))
-            raise DocumentPortalException("Invocation error in ConversationRAG" sys)
+            raise DocumentPortalException("Invocation error in ConversationRAG", sys)
     
     def _load_llm(self):
         # Logic to load the language model for generating responses
@@ -83,11 +83,11 @@ class ConversationalRAG:
             llm = ModelLoader().load_llm()
             if not llm:
                 raise ValueError("LLM could not be loaded")
-            self.log.info("LLM Loaded successfully", session_id=self._session_id)
+            self.log.info("LLM Loaded successfully", session_id=self.session_id)
             return llm
         except Exception as e :
             self.log.error("Failed to load LLM",error=str(e))
-            raise DocumentPortalException("LLM loading error in ConversationRAG" sys)
+            raise DocumentPortalException("LLM loading error in ConversationRAG", sys)
     
     
     @staticmethod
@@ -122,7 +122,7 @@ class ConversationalRAG:
                 | StrOutputParser()
             )
 
-            log.info("LCEL graph built successfully", session_id=self.session_id)
+            self.log.info("LCEL graph built successfully", session_id=self.session_id)
         except Exception as e:
-            log.error("Failed to build LCEL chain", error=str(e), session_id=self.session_id)
+            self.log.error("Failed to build LCEL chain", error=str(e), session_id=self.session_id)
             raise DocumentPortalException("Failed to build LCEL chain", sys)

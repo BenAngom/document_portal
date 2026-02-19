@@ -14,15 +14,15 @@ from utils.model_loader import ModelLoader
 class DocumentIngestor:
     
     SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt",".md"}
-    def __init__(self, temp_dir:str = "/Users/benudhorangom/Documents/document_portal/data/multi_doc_chat", faiss_dir: str = "faiss_index",session_id: str | None = None):
+    def __init__(self, temp_dir: str= "/Users/benudhorangom/Documents/document_portal/data/multi_doc_chat", faiss_dir: str = "faiss_index",session_id: str | None = None):
         try:
             self.log = CustomLogger().get_logger(__name__)
             
             #base dirs
             self.temp_dir = Path(temp_dir)
             self.faiss_dir = Path(faiss_dir)
-            temp_dir.mkdir(parents=True,exist_ok=True)
-            faiss_dir.mkdir(parents=True,exist_ok=True)
+            self.temp_dir.mkdir(parents=True,exist_ok=True)
+            self.faiss_dir.mkdir(parents=True,exist_ok=True)
             
             #sessionized paths
             self.session_id = session_id or f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
@@ -92,17 +92,17 @@ class DocumentIngestor:
         try:
             splitter = RecursiveCharacterTextSplitter(chunk_size = 1000, chunk_overlap = 500)
             chunks = splitter.split_documents(documents)
-            self.log.info("Documents split into chunks", total_chunks=len(chunks), session_id=self._session_id)
+            self.log.info("Documents split into chunks", total_chunks=len(chunks), session_id=self.session_id)
             
             embeddings = self.model_loader.load_embeddings()
             vectorstore = FAISS.from_documents(documents=chunks, embedding=embeddings)
             
             ##save FAISS index under session folder
             vectorstore.save_local(str(self.session_faiss_dir))
-            self.log.info("FAISS index saved to disk", path= str(self.session_faiss_dir), session_id=self._session_id)
+            self.log.info("FAISS index saved to disk", path= str(self.session_faiss_dir), session_id=self.session_id)
             
             retriever = vectorstore.as_retriever(search_type="similarity", session_kwargs={"k":5})  
-            self.log.info("FAISS retriever created and ready to use" , session_id=self._session_id)
+            self.log.info("FAISS retriever created and ready to use" , session_id=self.session_id)
             return retriever
         except Exception as e:
             self.log.error("", error=str(e))
