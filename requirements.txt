@@ -20,21 +20,7 @@ pypdf==6.6.0
 langchain-text-splitters==0.2.4
 ##cfn-lint
 
-
-langchain
-python-dotenv
-ipykernel
-langchain_groq
-langchain_google_genai
-langchain-community
-pypdf
-faiss-cpu
-structlog
-PyMuPDF
 pandas
-streamlit
-langchain-core[tracing]
-pytest
-langchain-text-splitters
+
 
 -e .
