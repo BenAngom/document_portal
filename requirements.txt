@@ -6,10 +6,10 @@ langchain-groq==0.1.9
 langchain-google-genai==1.0.10
 
 faiss-cpu==1.13.2
-##fastapi==
-##uvicorn==0.35.0
+fastapi==0.133.0
+uvicorn==0.41.0
 python-dotenv==1.2.1
-##python-multipart==0.0.20
+python-multipart==0.0.22
 PyMuPDF==1.26.7
 structlog==25.5.0
 ##docx2txt==0.9
