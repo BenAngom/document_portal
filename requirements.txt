@@ -12,15 +12,13 @@ python-dotenv==1.2.1
 python-multipart==0.0.22
 PyMuPDF==1.26.7
 structlog==25.5.0
-##docx2txt==0.9
+docx2txt==0.9
 ipykernel==7.1.0
 streamlit==1.54.0
 pytest==9.0.2
 pypdf==6.6.0
 langchain-text-splitters==0.2.4
-##cfn-lint
-
-pandas
+cfn-lint
 
 
 -e .

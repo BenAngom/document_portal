@@ -2,10 +2,10 @@
 import sys
 import os
 from operator import itemgetter
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
+#from langchain_core.runnables import RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import FAISS
 from utils.model_loader import ModelLoader
@@ -23,10 +23,14 @@ class ConversationalRAG:
             self.llm =  self._load_llm()
             self.contextualize_prompt: ChatPromptTemplate = PROMPT_REGISTRY[PromptType.CONTEXTUALIZE_QUESTION.value]
             self.qa_prompt: ChatPromptTemplate = PROMPT_REGISTRY[PromptType.CONTEXT_QA.value]
-            if retriever is None:
-                raise ValueError("Retriever cannot be None")
+            #if retriever is None:
+                #raise ValueError("Retriever cannot be None")
+                
+            # Lazy pieces
             self.retriever = retriever
-            self._build_lcel_chain()
+            self.chain = None
+            if self.retriever is not None:
+                self._build_lcel_chain()
             self.log.info("ConversationalRAG initialized", session_id=self.session_id)
             
         except Exception as e:
@@ -34,35 +38,80 @@ class ConversationalRAG:
             raise DocumentPortalException("Initialization error in ConversationalRAG", sys)
             
     
-    def load_retriever_from_faiss(self,index_path: str):
-        """
-        Load a FAISS vectorstore from disk and convert to retriever.
-        """
+    # def load_retriever_from_faiss(self,index_path: str):
+    #     """
+    #     Load a FAISS vectorstore from disk and convert to retriever.
+    #     """
         
+    #     try:
+    #         embeddings = ModelLoader().load_embeddings()
+    #         if not os.path.isdir(index_path):
+    #             raise FileNotFoundError(f"FAISS index directory not found: {index_path}")
+    #         vectorstore = FAISS.load_local(
+    #             index_path,
+    #             embeddings,
+    #             allow_dangerous_deserialization=True,  # only if you trust the index
+    #         )
+    #         self.retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
+    #         self.log.info("FAISS retriever loaded successfully", index_path=index_path, session_id=self.session_id)
+    #         return self.retriever
+        
+    #     except Exception as e:
+    #         self.log.error("Failed to load retriever from FAISS", error=str(e))
+    #         raise DocumentPortalException("Loading error in ConversationalRAG", sys)
+    
+    
+    def load_retriever_from_faiss(
+        self,
+        index_path: str,
+        k: int = 5,
+        index_name: str = "index",
+        search_type: str = "similarity",
+        search_kwargs: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Load FAISS vectorstore from disk and build retriever + LCEL chain.
+        """
         try:
-            embeddings = ModelLoader().load_embeddings()
             if not os.path.isdir(index_path):
                 raise FileNotFoundError(f"FAISS index directory not found: {index_path}")
+
+            embeddings = ModelLoader().load_embeddings()
             vectorstore = FAISS.load_local(
                 index_path,
                 embeddings,
-                allow_dangerous_deserialization=True,  # only if you trust the index
+                index_name=index_name,
+                allow_dangerous_deserialization=True,  # ok if you trust the index
             )
-            self.retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
-            self.log.info("FAISS retriever loaded successfully", index_path=index_path, session_id=self.session_id)
+
+            if search_kwargs is None:
+                search_kwargs = {"k": k}
+
+            self.retriever = vectorstore.as_retriever(
+                search_type=search_type, search_kwargs=search_kwargs
+            )
+            self._build_lcel_chain()
+
+            self.log.info(
+                "FAISS retriever loaded successfully",
+                index_path=index_path,
+                index_name=index_name,
+                k=k,
+                session_id=self.session_id,
+            )
             return self.retriever
-        
+
         except Exception as e:
             self.log.error("Failed to load retriever from FAISS", error=str(e))
             raise DocumentPortalException("Loading error in ConversationalRAG", sys)
 
     def invoke(self,user_input:str,chat_history: Optional[List[BaseMessage]] = None) ->str:
-        """
-        Args:
-            user_input (str): _description_
-            chat_history (Optional[List[BaseMessage]], optional): _description_. Defaults to None.
-        """
+        """Invoke the LCEL pipeline."""
         try:
+            if self.chain is None:
+                raise DocumentPortalException(
+                    "RAG chain not initialized. Call load_retriever_from_faiss() before invoke().", sys
+                )
             chat_history = chat_history or []
             payload={"input": user_input, "chat_history": chat_history}
             answer = self.chain.invoke(payload)
@@ -97,6 +146,8 @@ class ConversationalRAG:
     
     def _build_lcel_chain(self):
         try:
+            if self.retriever is None:
+                raise DocumentPortalException("No retriever set before building chain", sys)
             # 1) Rewrite question using chat history
             question_rewriter = (
                 {"input": itemgetter("input"), "chat_history": itemgetter("chat_history")}
