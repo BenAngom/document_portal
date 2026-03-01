@@ -17,7 +17,7 @@ COPY requirements.txt .
 COPY .env .
 
 # Copy project files
-COPY . .
+##COPY . .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
@@ -26,4 +26,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8080
 
 # Run FastAPI with uvicorn
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+##CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+
+# Run FastAPI (production mode)
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]
