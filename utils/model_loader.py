@@ -11,7 +11,6 @@ from logger.custom_logger import CustomLogger
 from exception.custom_exception import DocumentPortalException
 log = CustomLogger().get_logger(__name__)
 
-
 class ApiKeyManager:
     REQUIRED_KEYS = ["GROQ_API_KEY", "GOOGLE_API_KEY"]
 
