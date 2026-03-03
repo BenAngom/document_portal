@@ -28,13 +28,8 @@
       ],
       "secrets": [
         {
-          "name": "GROQ_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:177593955238:secret:apikeyliveclass-lolTSj:GROQ_API_KEY"
-        },
-
-        {
-          "name": "GOOGLE_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:177593955238:secret:apikeyliveclass-lolTSj:GOOGLE_API_KEY"
+          "name": "apikeyliveclass",
+          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:177593955238:secret:apikeyliveclass-lolTSj"
         }
       ],
       "logConfiguration": {
